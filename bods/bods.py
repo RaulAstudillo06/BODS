@@ -80,16 +80,20 @@ class BODS(object):
             marginal_argmaxs = []
             val_at_marginal_argmaxs = []
             for l in range(self.utility_support_cardinality):
+                print('Utility parameter: {}'.format(self.utility_support[l]))
                 marginal_val = 0
                 argmax = self._current_marginal_argmax(self.utility_support[l])
                 self.current_marginal_best_point[l] = argmax
+                print('Current marginal optimum: {}'.format(argmax))
                 marginal_argmaxs.append(argmax)
+                print('Values of f at current marginal optimum for all scenarios:')
                 for w in range(self.scenario_support_cardinality):
                     argmax_context = np.atleast_2d(np.append(argmax[0,:], self.scenario_support[w]))
                     objective_val = np.asscalar(self.objective.evaluate(argmax_context)[0])
                     scenario_marginal_optimal_val.append(objective_val)
                     print('Marginal objective value for scenario{}: {}'.format(self.scenario_support[w], objective_val))
                     marginal_val += self.scenario_prob_dist[w]*(self.utility.eval_func(objective_val, self.utility_support[l]))
+                print('Current marginal optimal value: {}'.format(marginal_val))
                 val_at_marginal_argmaxs.append(marginal_val)
                 val += self.utility_prob_dist[l]*marginal_val
             self.historical_marginal_best_points.append(marginal_argmaxs)
@@ -202,7 +206,10 @@ class BODS(object):
             self.X = np.vstack((self.X, self.suggested_sample))
 
             # --- Evaluate *f* in X, augment Y and update cost function (if needed)
-            print('Acquisition {}'.format(self.num_acquisitions + 1))
+            print('Experiment: ' + filename[0])
+            print('Sampling policy: ' + filename[1])
+            print('Replication id: ' + filename[2])
+            print('Acquisition number: {}'.format(self.num_acquisitions + 1))
             self.evaluate_objective()
             if filename is not None:
                 self.save_evaluations(filename)

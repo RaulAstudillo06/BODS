@@ -4,7 +4,7 @@
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 import sys
-sys.path.append('/home/raul/projects/BODS/bods/aux_software')
+sys.path.append('/home/ra598/Raul/projects/BODS/bods/aux_software')
 
 from GPyOpt.core.task.space import Design_space
 from . import core

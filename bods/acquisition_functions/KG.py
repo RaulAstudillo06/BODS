@@ -206,6 +206,7 @@ class KG(AcquisitionBase):
         X = np.atleast_2d(X)
         acqX = np.zeros((X.shape[0], 1))
         dacq_dX  = np.zeros(X.shape)
+        Z_samples = np.random.normal(size=5)
         for h in range(self.n_gp_hyps_samples):
             self.model.set_hyperparameters(h)
             inv_sqrt_varX = (self.model.posterior_variance(X)) ** (-0.5)
@@ -217,7 +218,7 @@ class KG(AcquisitionBase):
                 self.model.partial_precomputation_for_covariance_gradient(x)
                 self.model.partial_precomputation_for_variance_conditioned_on_next_point(x)
                 for l in range(self.utility_support_cardinality):
-                    for Z in self.Z_samples:
+                    for Z in Z_samples:
                         aux_sigma_tilde = inv_sqrt_varX[n,0]*Z
 
                         # Inner function of the KG acquisition function.
@@ -275,8 +276,8 @@ class KG(AcquisitionBase):
                             aux = np.vstack((mean_gradient[w, :], var_gradient[w, :]))
                             marginal_acqu_grad += self.scenario_prob_dist[w]*np.matmul(expectation_utility_gradient, aux)
                         dacq_dX[n, :] += self.utility_prob_dist[l] * marginal_acqu_grad
-        acqX /= (self.n_gp_hyps_samples * len(self.Z_samples))
-        dacq_dX /= (self.n_gp_hyps_samples * len(self.Z_samples))
+        acqX /= (self.n_gp_hyps_samples * len(Z_samples))
+        dacq_dX /= (self.n_gp_hyps_samples * len(Z_samples))
         acqX = (acqX-self.acq_mean)/self.acq_std
         dacq_dX /= self.acq_std
         return acqX, dacq_dX
