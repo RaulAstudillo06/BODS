@@ -49,7 +49,7 @@ class Optimizer(object):
         self.inner_optimizer = choose_optimizer(self.inner_optimizer_name, self.inner_context_manager.noncontext_bounds)
         self.verbose = True
 
-    def optimize(self, f=None, df=None, f_df=None, duplicate_manager=None, n_starts=8, n_anchor=4):
+    def optimize(self, f=None, df=None, f_df=None, duplicate_manager=None, n_starts=80, n_anchor=8):
         """
         Optimizes the input function.
 
@@ -101,7 +101,7 @@ class Optimizer(object):
             x_min = np.atleast_2d(anchor_points[0])
         return x_min, fx_min
 
-    def optimize_inner_func(self, f=None, df=None, f_df=None, duplicate_manager=None, parallel=False, n_starts=64, n_anchor=8):
+    def optimize_inner_func(self, f=None, df=None, f_df=None, duplicate_manager=None, parallel=False, n_starts=80, n_anchor=8):
         """
         Optimizes the input function.
 
