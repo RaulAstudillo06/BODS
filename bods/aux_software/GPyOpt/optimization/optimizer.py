@@ -136,7 +136,7 @@ class OptAMSGrad(Optimizer):
     AMSGrad algorithm.
     '''
 
-    def __init__(self, bounds, maxiter=120):
+    def __init__(self, bounds, maxiter=100):
         super(OptAMSGrad, self).__init__(bounds)
         self.maxiter = maxiter
 
@@ -216,7 +216,7 @@ class OptLbfgs(Optimizer):
     '''
     Wrapper for l-bfgs-b to use the true or the approximate gradients.
     '''
-    def __init__(self, bounds, maxiter=50):
+    def __init__(self, bounds, maxiter=200):
         super(OptLbfgs, self).__init__(bounds)
         self.maxiter = maxiter
 
