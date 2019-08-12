@@ -160,6 +160,12 @@ class BODS(object):
 
         if self.objective is None:
             raise InvalidConfigError("Cannot run the optimization loop without the objective function")
+        
+        # --- Print experiment details
+        if filename is not None:
+            print('Experiment: ' + filename[0])
+            print('Sampling policy: ' + filename[1])
+            print('Replication id: ' + filename[2])
 
         # --- Save the options to print and save the results
         self.verbosity = verbosity
@@ -250,8 +256,8 @@ class BODS(object):
         self.acquisition.optimizer.context_manager = ContextManager(self.decision_context_space, self.context)
 
         ### We zip the value in case there are categorical variables
-        #return self.decision_context_space.zip_inputs(self.evaluator.compute_batch(duplicate_manager=None))
-        return initial_design('random', self.decision_context_space, 1)
+        return self.decision_context_space.zip_inputs(self.evaluator.compute_batch(duplicate_manager=None))
+        #return initial_design('random', self.decision_context_space, 1)
 
     def _update_model(self):
         """
@@ -280,7 +286,7 @@ class BODS(object):
     def save_evaluations(self, filename):
         """
         """
-        experiment_folder_name = './results/' + filename[0]
+        experiment_folder_name = '/home/ra598/Raul/projects/BODS/bods/experiments/results/' + filename[0]
         experiment_name = filename[0] + '_' + filename[1] + '_' + filename[2]
         np.savetxt(experiment_folder_name + '/X/' + experiment_name + '_X.txt', self.X)
         np.savetxt(experiment_folder_name + '/Y/' + experiment_name + '_Y.txt', self.Y)
@@ -288,7 +294,7 @@ class BODS(object):
     def save_results(self, filename):
         """
         """
-        experiment_folder_name = './results/' + filename[0]
+        experiment_folder_name = '/home/ra598/Raul/projects/BODS/bods/experiments/results/' + filename[0]
         experiment_name = filename[0] + '_' + filename[1] + '_' + filename[2]
         aux_filename = experiment_folder_name + '/' + experiment_name + '.txt'
         results = np.atleast_1d(self.historical_optimal_values)

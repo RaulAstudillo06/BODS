@@ -206,7 +206,7 @@ class KG(AcquisitionBase):
         X = np.atleast_2d(X)
         acqX = np.zeros((X.shape[0], 1))
         dacq_dX  = np.zeros(X.shape)
-        Z_samples = np.random.normal(size=5)
+        Z_samples = self.Z_samples #np.random.normal(size=5)
         for h in range(self.n_gp_hyps_samples):
             self.model.set_hyperparameters(h)
             inv_sqrt_varX = (self.model.posterior_variance(X)) ** (-0.5)
