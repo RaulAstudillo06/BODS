@@ -2,7 +2,6 @@ import numpy as np
 import csv
 import time
 import matplotlib.pyplot as plt
-from aux_software.GPyOpt.experiment_design import initial_design
 from aux_software.GPyOpt.util.duplicate_manager import DuplicateManager
 from aux_software.GPyOpt.core.errors import InvalidConfigError
 from aux_software.GPyOpt.core.task.cost import CostModel
@@ -31,13 +30,14 @@ class BODS(object):
     :param scenario_distribution: distribution over $\Theta$. See scenario_distribution.py for more information.
     """
 
-    def __init__(self, model, optimization_space, objective, acquisition, evaluator, utility, scenario_distribution, X_init, Y_init=None, cost=None,
+    def __init__(self, model, optimization_space, objective, sampling_policy, acquisition, evaluator, utility, scenario_distribution, X_init, Y_init=None, cost=None,
                  normalize_Y=False, model_update_interval=1, expectation_utility=None):
         self.model = model
         self.optimization_space = optimization_space
         self.decision_context_space = optimization_space.decision_context_space
         self.decision_space = optimization_space.decision_space
         self.objective = objective
+        self.sampling_policy = sampling_policy
         self.acquisition = acquisition
         self.evaluator = evaluator
         self.utility = utility
@@ -91,9 +91,9 @@ class BODS(object):
                     argmax_context = np.atleast_2d(np.append(argmax[0,:], self.scenario_support[w]))
                     objective_val = np.asscalar(self.objective.evaluate(argmax_context)[0])
                     scenario_marginal_optimal_val.append(objective_val)
-                    print('Marginal objective value for scenario{}: {}'.format(self.scenario_support[w], objective_val))
+                    print('Marginal objective value for scenario {}: {}'.format(self.scenario_support[w], objective_val))
                     marginal_val += self.scenario_prob_dist[w]*(self.utility.eval_func(objective_val, self.utility_support[l]))
-                print('Current marginal optimal value: {}'.format(marginal_val))
+                print('Current marginal optimal value: {}'.format(marginal_val))    
                 val_at_marginal_argmaxs.append(marginal_val)
                 val += self.utility_prob_dist[l]*marginal_val
             self.historical_marginal_best_points.append(marginal_argmaxs)
@@ -139,6 +139,8 @@ class BODS(object):
                     func_val += self.scenario_prob_dist[w] * (expectation_utility)
                     expectation_utility_gradient = self.expectation_utility.eval_gradient(mean[w,0], var[w,0], utility_parameter)
                     aux = np.vstack((mean_gradient[w, :], var_gradient[w, :]))
+                    #print(expectation_utility_gradient)
+                    #print(aux)
                     func_gradient += self.scenario_prob_dist[w]*np.matmul(expectation_utility_gradient, aux)
             func_val /= self.number_of_gp_hyps_samples
             func_gradient /= self.number_of_gp_hyps_samples
@@ -219,6 +221,8 @@ class BODS(object):
             self.model.get_model_parameters_names()
             self.model.get_model_parameters()
             self._current_max_value()
+            if filename is not None:
+                self.save_results(filename)
             self._save_baseline_points
             # --- Update current evaluation time and function evaluations
             self.cum_time = time.time() - self.time_zero
@@ -227,8 +231,6 @@ class BODS(object):
         self.f_at_historical_marginal_optima = np.asarray(self.f_at_historical_marginal_optima)
         self.historical_marginal_best_points = np.asarray(self.historical_marginal_best_points)
         self.val_of_historical_marginal_best_points = np.asarray(self.val_of_historical_marginal_best_points)
-        if filename is not None:
-            self.save_results(filename)
 
     def evaluate_objective(self):
         """
@@ -246,12 +248,15 @@ class BODS(object):
         :param ignored_zipped_X: matrix of input configurations that the user black-lists, i.e., those configurations will not be suggested again.
         :return:
         """
-        ## --- Update the context if any
-        self.acquisition.optimizer.context_manager = ContextManager(self.decision_context_space, self.context)
-
-        ### We zip the value in case there are categorical variables
-        #return self.decision_context_space.zip_inputs(self.evaluator.compute_batch(duplicate_manager=None))
-        return initial_design('random', self.decision_context_space, 1)
+        if self.acquisition is not None:
+            ## --- Update the context if any
+            self.acquisition.optimizer.context_manager = ContextManager(self.decision_context_space, self.context)
+    
+            ### We zip the value in case there are categorical variables
+            suggested_sample = self.decision_context_space.zip_inputs(self.evaluator.compute_batch(duplicate_manager=None))
+        else:
+            suggested_sample = self.sampling_policy.suggest_sample()
+        return suggested_sample
 
     def _update_model(self):
         """
@@ -266,13 +271,14 @@ class BODS(object):
     def _save_baseline_points(self):
         """
         """
-        if self.full_utility_support:
-            if self.full_scenario_support:
-                baseline_points = []
-                for l in range(self.utility_support_cardinality):
-                    for w in range(self.scenario_support_cardinality):
-                        baseline_points.append(np.append(self.current_marginal_best_point[l], self.scenario_support[w]))
-                self.acquisition.optimizer.baseline_points = baseline_points
+        if self.acquisition is not None:
+            if self.full_utility_support:
+                if self.full_scenario_support:
+                    baseline_points = []
+                    for l in range(self.utility_support_cardinality):
+                        for w in range(self.scenario_support_cardinality):
+                            baseline_points.append(np.append(self.current_marginal_best_point[l], self.scenario_support[w]))
+                    self.acquisition.optimizer.baseline_points = baseline_points
 
     def get_evaluations(self):
         return self.X.copy(), self.Y.copy()

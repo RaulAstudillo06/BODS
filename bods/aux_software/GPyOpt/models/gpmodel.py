@@ -3,9 +3,9 @@
 
 import numpy as np
 import GPy
-
 from .base import BOModel
 from GPy.util.linalg import jitchol
+from copy import deepcopy
 
 
 class GPModel(BOModel):
@@ -156,6 +156,10 @@ class GPModel(BOModel):
     def set_hyperparameters(self, i):
         self.current_model = self.model_instances[i]
             
+            
+    def get_copy_of_model_sample(self):
+        return deepcopy(self.model_instances[0])
+     
                 
     def predict(self, X, full_cov=False):
         """
