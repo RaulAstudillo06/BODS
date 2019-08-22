@@ -74,61 +74,6 @@ class OptSGD(Optimizer):
         x = np.atleast_2d(x)
         fx = np.atleast_2d(fx)
         return x, fx
-    
-    
-class OptADAM(Optimizer):
-    '''
-    ADAM algorithm.
-    '''
-    def __init__(self, bounds, maxiter=10):
-        super(OptADAM, self).__init__(bounds)
-        self.maxiter = maxiter
-
-    def optimize(self, x0, f=None, df=None, f_df=None, verbose=False):
-        """
-        :param x0: initial point for a local optimizer.
-        :param f: function to optimize.
-        :param df: gradient of the function to optimize.
-        :param f_df: returns both the function to optimize and its gradient.
-        """
-        x = x0
-        alpha = 0.001
-        beta1 = 0.9
-        beta2 = 0.999
-        eps = 1e-8
-        m = 0*x0
-        v = 0*x0
-        beta1_power = 1.
-        beta2_power = 1.
-
-        for t in range(1, self.maxiter + 1):
-            print(t)
-            f_x, g_x = f_df(x)
-            m = beta1*m +(1-beta1)*g_x
-            v = beta2*v +(1-beta2)*np.square(g_x)
-            beta1_power = beta1_power*beta1
-            m_hat = m/(1-beta1_power)
-            beta2_power = beta2_power*beta2
-            v_hat = v/(1-beta2_power)
-            tmp = alpha*np.divide(m_hat,np.sqrt(v_hat)+eps)
-            if np.any(np.isnan(tmp)):
-                #print('nan found')
-                x = np.atleast_2d(x)
-                f_x = f(x)
-                return x, f_x
-            
-            x = x - tmp
-            for k in range(x.shape[1]):
-                if x[0,k] < self.bounds[k][0]:
-                    x[0,k] = self.bounds[k][0]
-                elif x[0,k] > self.bounds[k][1]:
-                    x[0,k] = self.bounds[k][1]
-
-        x = np.atleast_2d(x)      
-        f_x = f(x)
-        print(x)
-        print(f_x)
-        return x, f_x
  
    
 class OptAMSGrad(Optimizer):
@@ -136,11 +81,11 @@ class OptAMSGrad(Optimizer):
     AMSGrad algorithm.
     '''
 
-    def __init__(self, bounds, maxiter=100):
+    def __init__(self, bounds, maxiter=200):
         super(OptAMSGrad, self).__init__(bounds)
         self.maxiter = maxiter
 
-    def optimize(self, x0, f=None, df=None, f_df=None, verbose=False):
+    def optimize(self, x0, f=None, df=None, f_df=None, verbose=False, maxfevals=1000):
         """
         :param x0: initial point for a local optimizer.
         :param f: function to optimize.
@@ -220,7 +165,7 @@ class OptLbfgs(Optimizer):
         super(OptLbfgs, self).__init__(bounds)
         self.maxiter = maxiter
 
-    def optimize(self, x0, f=None, df=None, f_df=None, verbose=False):
+    def optimize(self, x0, f=None, df=None, f_df=None, verbose=False, maxfevals=1000):
         """
         :param x0: initial point for a local optimizer.
         :param f: function to optimize.
@@ -253,12 +198,10 @@ class OptDirect(Optimizer):
     '''
     Wrapper for DIRECT optimization method. It works partitioning iteratively the domain
     of the function. Only requires f and the box constraints to work.
-
     '''
     def __init__(self, bounds, maxiter=1000):
         super(OptDirect, self).__init__(bounds)
         self.maxiter = maxiter
-        assert self.space.has_types['continuous']
 
     def optimize(self, x0, f=None, df=None, f_df=None):
         """
@@ -280,42 +223,45 @@ class OptDirect(Optimizer):
             return np.atleast_2d(x), f(np.atleast_2d(x))
         except ImportError:
             print("Cannot find DIRECT library, please install it to use this option.")
+            raise
 
 
 class OptCma(Optimizer):
     '''
     Wrapper the Covariance Matrix Adaptation Evolutionary strategy (CMA-ES) optimization method. It works generating
     an stochastic search based on multivariate Gaussian samples. Only requires f and the box constraints to work.
-
     '''
-    def __init__(self, bounds, maxiter=5):
+    def __init__(self, bounds, maxiter=1000):
         super(OptCma, self).__init__(bounds)
         self.maxiter = maxiter
 
-    def optimize(self, x0, f=None, df=None, f_df=None):
+    def optimize(self, x0, f=None, df=None, f_df=None, maxfevals=1000):
         """
         :param x0: initial point for a local optimizer.
         :param f: function to optimize.
         :param df: gradient of the function to optimize.
         :param f_df: returns both the function to optimize and its gradient.
         """
+
+        if len(self.bounds) == 1:
+            raise IndexError("CMA does not work in problems of dimension 1.")
+
         try:
             import cma
             def CMA_f_wrapper(f):
                 def g(x):
-                    return f(np.array([x]))[0][0]
+                    return f(np.array([x]))
                 return g
             lB = np.asarray(self.bounds)[:,0]
             uB = np.asarray(self.bounds)[:,1]
-            x = cma.fmin(CMA_f_wrapper(f), x0, 0.6, options={"bounds":[lB, uB], "verbose":-1})[0]
+            x = cma.fmin(CMA_f_wrapper(f), x0, 0.6, options={"bounds":[lB, uB], "verbose":-1, 'maxfevals': maxfevals})[0]
             return np.atleast_2d(x), f(np.atleast_2d(x))
         except ImportError:
             print("Cannot find cma library, please install it to use this option.")
-        except:
-            print("CMA does not work in problems of dimension 1.")
+            raise
 
 
-def apply_optimizer(optimizer, x0, f=None, df=None, f_df=None, duplicate_manager=None, context_manager=None, space=None, verbose=False):
+def apply_optimizer(optimizer, x0, f, df=None, f_df=None, duplicate_manager=None, context_manager=None, space=None, verbose=False, maxfevals=1000):
     """
     :param x0: initial point for a local optimizer (x0 can be defined with or without the context included).
     :param f: function to optimize.
@@ -341,7 +287,7 @@ def apply_optimizer(optimizer, x0, f=None, df=None, f_df=None, duplicate_manager
         raise ValueError("The starting point of the optimizer cannot be a duplicate.")
 
     ## --- Optimize point
-    optimized_x, _ = optimizer.optimize(problem.x0_nocontext, problem.f_nocontext, problem.df_nocontext, problem.f_df_nocontext)
+    optimized_x, _ = optimizer.optimize(problem.x0_nocontext, problem.f_nocontext, problem.df_nocontext, problem.f_df_nocontext, maxfevals=maxfevals)
 
     ## --- Add context and round according to the type of variables of the design space
     suggested_x_with_context = add_context(optimized_x)

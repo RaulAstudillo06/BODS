@@ -47,13 +47,11 @@ class RandomDesign(ExperimentDesign):
 
     def get_samples_without_constraints(self, init_points_count):
         samples = np.empty((init_points_count, self.space.dimensionality))
-
         self.fill_noncontinous_variables(samples)
 
         if self.space.has_continuous():
             X_design = samples_multidimensional_uniform(self.space.get_continuous_bounds(), init_points_count)
             samples[:, self.space.get_continuous_dims()] = X_design
-
         return samples
 
 def samples_multidimensional_uniform(bounds, points_count):

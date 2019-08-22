@@ -17,3 +17,12 @@ class ScenarioDistribution(object):
             self.support = support
             self.prob_dist = prob_dist
             self.sample_generator = sample_generator
+        
+    
+    def sample(self, number_of_samples=1):
+        if self.support is None:
+            parameter_samples = self.sample_generator(number_of_samples)
+        else:
+            indices = np.random.choice(int(len(self.support)), size=number_of_samples, p=self.prob_dist)
+            parameter_samples = self.support[indices,:]
+        return parameter_samples

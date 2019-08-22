@@ -23,8 +23,8 @@ class UtilityDistribution(object):
             else:
                 self.use_full_support = False
     
-    def sample(self, number_of_samples):
-        if self.support is not None:
+    def sample(self, number_of_samples=1):
+        if self.support is None:
             parameter_samples = self.sample_generator(number_of_samples)
         else:
             indices = np.random.choice(int(len(self.support)), size=number_of_samples, p=self.prob_dist)

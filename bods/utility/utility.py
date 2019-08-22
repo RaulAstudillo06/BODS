@@ -45,3 +45,7 @@ class Utility(object):
         Evaluates the gradient f the utility function at y given a fixed parameter.
         """
         return self.gradient(y, theta)
+    
+    
+    def sample_parameter(self, number_of_samples):
+        return self.parameter_distribution.sample(number_of_samples)
