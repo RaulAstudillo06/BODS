@@ -1,4 +1,4 @@
-# Copyright (c) 2012, GPy authors (see AUTHORS.txt).
+#Copyright (c) 2012, GPy authors (see AUTHORS.txt).
 # Licensed under the BSD 3-clause license (see LICENSE.txt)
 
 # tdot function courtesy of Ian Murray:
@@ -11,8 +11,7 @@ from scipy.linalg import lapack, blas
 from .config import config
 import logging
 if config.getboolean('cython', 'working'):
-    pass
-    #from . import linalg_cython
+    pass #from . import linalg_cython
 
 def force_F_ordered_symmetric(A):
     """
@@ -92,19 +91,14 @@ def jitchol(A, maxtries=5):
 def dtrtrs(A, B, lower=1, trans=0, unitdiag=0):
     """
     Wrapper for lapack dtrtrs function
-
     DTRTRS solves a triangular system of the form
-
         A * X = B  or  A**T * X = B,
-
     where A is a triangular matrix of order N, and B is an N-by-NRHS
     matrix.  A check is made to verify that A is nonsingular.
-
     :param A: Matrix A(triangular)
     :param B: Matrix B
     :param lower: is matrix lower (true) or upper (false)
     :returns: Solution to A * X = B or A**T * X = B
-
     """
     A = np.asfortranarray(A)
     #Note: B does not seem to need to be F ordered!
@@ -124,15 +118,12 @@ def dpotrs(A, B, lower=1):
 def dpotri(A, lower=1):
     """
     Wrapper for lapack dpotri function
-
     DPOTRI - compute the inverse of a real symmetric positive
       definite matrix A using the Cholesky factorization A =
       U**T*U or A = L*L**T computed by DPOTRF
-
     :param A: Matrix A
     :param lower: is matrix lower (true) or upper (false)
     :returns: A inverse
-
     """
 
     A = force_F_ordered(A)
@@ -164,7 +155,6 @@ def mdot(*args):
     for instance mdot(a,((b,c),d)) multiplies a (a*((b*c)*d)).
     Note that this means the output of dot(a,b) and mdot(a,b) will differ if
     a or b is a pure tuple of numbers.
-
     """
     if len(args) == 1:
         return args[0]
@@ -190,7 +180,6 @@ def _mdot_r(a, b):
 def pdinv(A, *args):
     """
     :param A: A DxD pd numpy array
-
     :rval Ai: the inverse of A
     :rtype Ai: np.ndarray
     :rval L: the Cholesky decomposition of A
@@ -199,7 +188,6 @@ def pdinv(A, *args):
     :rtype Li: np.ndarray
     :rval logdet: the log of the determinant of A
     :rtype logdet: float64
-
     """
     L = jitchol(A, *args)
     logdet = 2.*np.sum(np.log(np.diag(L)))
@@ -214,10 +202,8 @@ def pdinv(A, *args):
 def dtrtri(L):
     """
     Inverts a Cholesky lower triangular matrix
-
     :param L: lower triangular matrix
     :rtype: inverse of L
-
     """
 
     L = force_F_ordered(L)
@@ -227,12 +213,10 @@ def dtrtri(L):
 def multiple_pdinv(A):
     """
     :param A: A DxDxN numpy array (each A[:,:,i] is pd)
-
     :rval invs: the inverses of A
     :rtype invs: np.ndarray
     :rval hld: 0.5* the log of the determinants of A
     :rtype hld: np.array
-
     """
     N = A.shape[-1]
     chols = [jitchol(A[:, :, i]) for i in range(N)]
@@ -245,14 +229,10 @@ def multiple_pdinv(A):
 def pca(Y, input_dim):
     """
     Principal component analysis: maximum likelihood solution by SVD
-
     :param Y: NxD np.array of data
     :param input_dim: int, dimension of projection
-
-
     :rval X: - Nxinput_dim np.array of dimensionality reduced data
     :rval W: - input_dimxD mapping from X to Y
-
     """
     if not np.allclose(Y.mean(axis=0), 0.0):
         print("Y is not zero mean, centering it locally (GPy.util.linalg.pca)")
@@ -269,7 +249,6 @@ def pca(Y, input_dim):
 def ppca(Y, Q, iterations=100):
     """
     EM implementation for probabilistic pca.
-
     :param array-like Y: Observed Data
     :param int Q: Dimensionality for reduced array
     :param int iterations: number of iterations for EM
@@ -323,11 +302,9 @@ def DSYR_blas(A, x, alpha=1.):
     """
     Performs a symmetric rank-1 update operation:
     A <- A + alpha * np.dot(x,x.T)
-
     :param A: Symmetric NxN np.array
     :param x: Nx1 np.array
     :param alpha: scalar
-
     """
     At = blas.dsyr(lower=0, x=x, a=A, alpha=alpha, overwrite_a=False) #See https://github.com/scipy/scipy/issues/8155
     A[:] = At
@@ -337,11 +314,9 @@ def DSYR_numpy(A, x, alpha=1.):
     """
     Performs a symmetric rank-1 update operation:
     A <- A + alpha * np.dot(x,x.T)
-
     :param A: Symmetric NxN np.array
     :param x: Nx1 np.array
     :param alpha: scalar
-
     """
     A += alpha * np.dot(x[:, None], x[None, :])
 
@@ -354,9 +329,7 @@ def symmetrify(A, upper=False):
     """
     Take the square matrix A and make it symmetrical by copting elements from
     the lower half to the upper
-
     works IN PLACE.
-
     note: tries to use cython, falls back to a slower numpy version
     """
     if config.getboolean('cython', 'working'):
@@ -403,7 +376,6 @@ def ijk_jlk_to_il(A, B):
 def ijk_ljk_to_ilk(A, B):
     """
     Faster version of einsum np.einsum('ijk,ljk->ilk', A, B)
-
     I.e A.dot(B.T) for every dimension
     """
     res = np.zeros((A.shape[-1], A.shape[0], B.shape[0]))
