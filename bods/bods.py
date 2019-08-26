@@ -189,6 +189,8 @@ class BODS(object):
                 self.cost.update_cost_model(self.X, cost_values)
         # --- Initialize model
         self.model.updateModel(self.X, self.Y)
+        self.model.get_model_parameters_names()
+        self.model.get_model_parameters()
 
         # --- Initialize iterations and running time
         self.time_zero = time.time()
