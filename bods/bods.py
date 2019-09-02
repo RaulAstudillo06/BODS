@@ -195,6 +195,8 @@ class BODS(object):
                 self.cost.update_cost_model(self.X, cost_values)
         # --- Initialize model
         self.model.updateModel(self.X, self.Y)
+        self.model.get_model_parameters_names()
+        self.model.get_model_parameters()
 
         # --- Initialize iterations and running time
         self.time_zero = time.time()
@@ -254,7 +256,6 @@ class BODS(object):
         :param ignored_zipped_X: matrix of input configurations that the user black-lists, i.e., those configurations will not be suggested again.
         :return:
         """
-
         if self.acquisition is not None:
             ## --- Update the context if any
             self.acquisition.optimizer.context_manager = ContextManager(self.decision_context_space, self.context)

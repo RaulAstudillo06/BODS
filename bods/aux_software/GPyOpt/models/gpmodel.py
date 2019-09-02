@@ -57,7 +57,8 @@ class GPModel(BOModel):
         # --- define kernel
         self.input_dim = X.shape[1]
         if self.kernel is None:
-            kern = GPy.kern.SE(self.input_dim, variance=1.)
+            #kern = GPy.kern.SE(self.input_dim, variance=1.)
+            kern = GPy.kern.Matern52(self.input_dim, variance=1., ARD=self.ARD)
         else:
             kern = self.kernel
             self.kernel = None
@@ -82,7 +83,8 @@ class GPModel(BOModel):
         noise_var_instances = []
         for i in range(self.n_samples):
             if self.kernel is None:
-                kern_instances.append(GPy.kern.SE(self.input_dim, variance=1.))
+                #kern_instances.append(GPy.kern.SE(self.input_dim, variance=1.))
+                kern_instances.append(GPy.kern.Matern52(self.input_dim, variance=1., ARD=self.ARD))
             else:
                 kern_instances.append(self.kernel)
                 self.kernel = None
